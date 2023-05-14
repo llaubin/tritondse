@@ -10,6 +10,8 @@ from tritondse.types import Architecture, Addr
 
 Arch = namedtuple("Arch", "ret_reg pc_reg bp_reg sp_reg sys_reg reg_args halt_inst syscall_inst")
 
+# TODO : See X86_64 ABI for MS (XMMx can also be used, only 4 registers)
+
 ARCHS = {
     Architecture.X86:     Arch('eax', 'eip', 'ebp', 'esp', 'eax',
                                [],
@@ -17,6 +19,10 @@ ARCHS = {
                                [OPCODE.X86.SYSCALL, OPCODE.X86.SYSENTER]),  # ignore int 80
     Architecture.X86_64:  Arch('rax', 'rip', 'rbp', 'rsp', 'rax',
                                ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9'],
+                               OPCODE.X86.HLT,
+                               [OPCODE.X86.SYSCALL, OPCODE.X86.SYSENTER]),  # ignore int 80
+    Architecture.X86_64_MS:Arch('rax', 'rip', 'rbp', 'rsp', 'rax',
+                               ['rcx', 'rdx', 'r8', 'r9'],
                                OPCODE.X86.HLT,
                                [OPCODE.X86.SYSCALL, OPCODE.X86.SYSENTER]),  # ignore int 80
     Architecture.AARCH64: Arch('x0', 'pc', 'sp', 'sp', 'x8',
@@ -69,6 +75,7 @@ class CpuState(dict):
         for r in ctx.getAllRegisters():
             self[r.getName()] = r
 
+
     def __getattr__(self, name: str):
         """
         Return the concrete value of a given register name
@@ -80,6 +87,7 @@ class CpuState(dict):
             return self.__ctx.getConcreteRegisterValue(self[name])
         else:
             super().__getattr__(name)
+
 
     def __setattr__(self, name: str, value: int):
         """
@@ -93,6 +101,7 @@ class CpuState(dict):
         else:
             super().__setattr__(name, value)
 
+
     @property
     def program_counter(self) -> int:
         """
@@ -100,6 +109,7 @@ class CpuState(dict):
         :rtype: int
         """
         return getattr(self, self.__archinfo.pc_reg)
+
 
     @program_counter.setter
     def program_counter(self, value: int) -> None:
@@ -111,12 +121,14 @@ class CpuState(dict):
         """
         setattr(self, self.__archinfo.pc_reg, value)
 
+
     @property
     def base_pointer(self) -> int:
         """
         :return: The value of the base pointer register
         """
         return getattr(self, self.__archinfo.bp_reg)
+
 
     @base_pointer.setter
     def base_pointer(self, value: int) -> None:
@@ -128,12 +140,14 @@ class CpuState(dict):
         """
         setattr(self, self.__archinfo.bp_reg, value)
 
+
     @property
     def stack_pointer(self) -> int:
         """
         :return: The value of the stack pointer register
         """
         return getattr(self, self.__archinfo.sp_reg)
+
 
     @stack_pointer.setter
     def stack_pointer(self, value: int) -> None:
@@ -144,6 +158,7 @@ class CpuState(dict):
         :type value: int
         """
         setattr(self, self.__archinfo.sp_reg, value)
+
 
 
 def local_architecture() -> Architecture:

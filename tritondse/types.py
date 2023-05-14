@@ -96,6 +96,7 @@ class Architecture(IntEnum):
     ARM32 = ARCH.ARM32      # doc: ARM architecture (32 bits)
     X86 = ARCH.X86          # doc: x86 architecture (32 bits)
     X86_64 = ARCH.X86_64    # doc: x86-64 architecture (64 bits)
+    X86_64_MS = ARCH.X86_64    # doc: x86-64 architecture (64 bits)
 
 @enum_tools.documentation.document_enum
 class ArchMode(IntFlag):

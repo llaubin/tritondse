@@ -31,7 +31,8 @@ setup(
         "pyQBDI",
         "cle",
         "quokka-project",
-        "enum_tools"
+        "enum_tools",
+	"minidump"
     ],
     tests_require=[],
     license="Apache License Version 2.0",
