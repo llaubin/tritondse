@@ -2,7 +2,6 @@
 import io
 import time
 import os
-<<<<<<< HEAD
 
 if os.name == 'posix':
     import resource
@@ -684,16 +683,11 @@ class SymbolicExecutor(object):
 
     @staticmethod
     def mem_usage_str() -> str:
-<<<<<<< HEAD
         """
         Debug function to track memory consumption of an execution (not
         implemented on Windows).
         """
         if os.name == "posix":
-=======
-        """ debug function to track memory consumption of an execution (Linux only) """
-        if os.name=='posix':
->>>>>>> ace2dca (Disable memory reporting on Windows)
             size, resident, shared, _, _, _, _ = (int(x) for x in open(f"/proc/{os.getpid()}/statm").read().split(" "))
             resident = resident * resource.getpagesize()
             units = [(float(1024), "Kb"), (float(1024 **2), "Mb"), (float(1024 **3), "Gb")]
@@ -704,11 +698,8 @@ class SymbolicExecutor(object):
                     return "%.2f%s" % (resident/unit, s)
             return "%dB" % resident
         else:
-<<<<<<< HEAD
           return "N/A"
-=======
-            return "N/A"  # 'resource' is a Linux only python package
->>>>>>> ace2dca (Disable memory reporting on Windows)
+
 
     def mk_new_seed_from_model(self, model: Model) -> Seed:
         """

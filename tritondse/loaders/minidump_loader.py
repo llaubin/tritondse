@@ -6,7 +6,7 @@ import logging
 
 # local imports
 from tritondse.loaders import Loader, LoadableSegment
-from tritondse.types import Addr, Architecture, Platform, ArchMode, PathLike, Perm
+from tritondse.types import Addr, Architecture, Platform, ArchMode, PathLike, Perm, Endian
 from tritondse.arch import ARCHS
 
 # https://github.com/skelsec/minidump/
@@ -199,8 +199,14 @@ class MinidumpLoader(Loader):
         """
         return self._platform
 
+    @property
+    def endianness(self) -> Endian:
+        return Endian.LITTLE            # TODO: Check if a Windbg dump could be else ? 
+
+        
     def is_mainmodule_address(self,address):
         """
         :return: True if the adress belongs to the main module memory segment
         """
         return self.main_module.baseaddress <= address <= self.main_module.baseaddress+self.main_module.size
+
