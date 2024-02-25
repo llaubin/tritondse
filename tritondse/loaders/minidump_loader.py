@@ -65,12 +65,30 @@ class MinidumpLoader(Loader):
       """
       get the thread object throwing the ExceptionAddress
       """
-      exceptions=self.md.exception.exception_records
-      if len(exceptions)==0:
-        return None
-      threadId=exceptions[0].ThreadId
+      if self.md.exception==None or len(self.md.exception.exception_records) == 0:
+        # in some cases, the int3 will not be considered as a real exception and there will be
+        # no exception context in the dump. This can be checked with `.ecxr` command in windbg 
+        # which will show :
+        #  0:000> .ecxr
+        #  Minidump doesn't have an exception context
+        #  Unable to get exception context, HRESULT 0x80004002
+        # 
+        # Meanwhile, Windbg is still able to find the *faulty thread*. But no idea how ...
+        # 
+        raise NotImplementedError("No exception record in this dump, please provide the thread Id") 
+
+      threadId=self.md.exception.exception_records[0].ThreadId
       for t in self.md.threads.threads:
         if t.ThreadId==threadId:
+          return t
+      return None
+
+    def get_thread_by_id(self, thread_id: int):
+      """
+      get the thread matching the thread_id
+      """
+      for t in self.md.threads.threads:
+        if t.ThreadId == thread_id:
           return t
       return None
 
@@ -84,7 +102,8 @@ class MinidumpLoader(Loader):
         return None
 
     def __init__(self,
-                 path: PathLike):
+                 path: PathLike,
+                 thread_id: int = None):
         super(MinidumpLoader, self).__init__(path)
         self.path: Path = Path(path)  #: MemoryDump file path
         if not self.path.is_file():
@@ -98,7 +117,7 @@ class MinidumpLoader(Loader):
         elif md.sysinfo.ProcessorArchitecture == PROCESSOR_ARCHITECTURE.AMD64:
           self._architecture =  Architecture.X86_64_MS
         else:
-          raise Error("Unsupported Minidump architecture")
+          raise NotImplementedError("Unsupported Minidump architecture")
 
         self._arch_mode = None
         self._archinfo = ARCHS[self._architecture]
@@ -121,8 +140,12 @@ class MinidumpLoader(Loader):
 
         self.vmmap = vmmap
 
-        # init cpustate from threadcontext
-        active_thread = self.get_active_thread()
+        # init cpustate from threadcontext or provided thread_id
+        if thread_id==None:
+          active_thread = self.get_active_thread()
+        else:
+          active_thread = self.get_thread_by_id(thread_id)
+
         cs = cpustate_from_CONTEXT(active_thread.ContextObject)
         self._cpustate = cs
         
@@ -130,12 +153,8 @@ class MinidumpLoader(Loader):
         # this way code like `mov rax, qword ptr gs:[0x58]` will be correctly evaluated !
         if  self._architecture ==  Architecture.X86:
           cs['fs']=active_thread.Teb
-        elif self._architecture == Architecture.X86_64_MS:
+        else: #  self._architecture == Architecture.X86_64_MS:
           cs['gs']=active_thread.Teb
-        else:
-          raise Error("Unexpected control flow \o\ /o/")
-
-
 
 
     @property
